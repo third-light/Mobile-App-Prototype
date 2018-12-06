@@ -3,6 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<title>Third Light Mobile</title>
+	<script src="js/vendor/jquery-3.3.1.min.js"></script>
 	<script src="js/vendor/angular-1.6.2.min.js"></script>
 	<script src="js/app.js"></script>
 	<script src="js/api.js"></script>
@@ -44,7 +45,7 @@
 					<div ng-if="chorus.currentBatch.files.length > 0">
 						<img src="img/2.5 Files - Destination Folder.png" style="position:absolute;left:0;top:76px;">
 						<img src="img/2.5 Files - Destination Folder - Change Button.png" ng-click="filesChooseDestination()" style="position:absolute;right:0;top:96px;">
-						<div style="position:absolute;left:60px;top:134px;color:white">{{chorus.currentBatch.uploadDestination.name}}</div>
+						<div style="position:absolute;left:60px;top:134px;color:white;overflow:hidden;width:190px;text-overflow: ellipsis;white-space: nowrap;">{{chorus.currentBatch.uploadDestination.name}}</div>
 						<div style="overflow:auto;position: absolute;left:0;top:179px;right:0;height:420px;background-color: white;">
 							<div ng-repeat="f in chorus.currentBatch.files" style="position: relative;">
 								<img src="img/2.5 Files - File.png">

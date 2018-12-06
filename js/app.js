@@ -18,7 +18,7 @@ App.controller("mainCtrl", [
 				userGuid: $scope.chorus.user && $scope.chorus.user.guid,
 				sessionId: $scope.chorus.sessionId,
 				apiKey: $scope.chorus.apiKey,
-				defaultUploadDestination: $scope.defaultUploadDestination
+				defaultUploadDestination: $scope.chorus.defaultUploadDestination
 			}
 			window.sessionStorage.setItem("preserved-data", JSON.stringify(preservedData))
 		}
@@ -72,7 +72,7 @@ App.controller("mainCtrl", [
 				$scope.chorus.user.guid = preservedData.userGuid
 				$scope.chorus.sessionId = preservedData.sessionId
 				$scope.chorus.apiKey = preservedData.apiKey
-				$scope.defaultUploadDestinatio = preservedData.defaultUploadDestination
+				$scope.chorus.defaultUploadDestination = preservedData.defaultUploadDestination
 			}
 
 			// hacks
@@ -96,7 +96,6 @@ App.controller("mainCtrl", [
 
 			API.SetServer(fullServerUrl($scope.chorus.server))
 			API.SetSessionId($scope.chorus.sessionId)
-			
 			API.CoreGetUserDetails().then(function(userDetails) {
 				if (userDetails.guid == $scope.chorus.user.guid) {
 					return userDetails
@@ -129,7 +128,7 @@ App.controller("mainCtrl", [
 				$scope.chorus.user.avatarUrl = userDetails.avatar
 				$scope.chorus.user.context = userDetails.context
 
-				if ($scope.chorus.defaultUploadDestination || $scope.chorus.defaultUploadDestination.guid) {
+				if (!$scope.chorus.defaultUploadDestination || !$scope.chorus.defaultUploadDestination.guid) {
 					$scope.chorus.defaultUploadDestination = {
 						name: userDetails.name,
 						guid: userDetails.backingFolderGuid,
@@ -143,7 +142,8 @@ App.controller("mainCtrl", [
 				$scope.appstate = "loggedin"
 				$scope.viewstate = "upload"
 
-			}).catch(function() {
+			}).catch(function(err) {
+				console.log(err)
 				// any error - just kick back to choose server to restart
 				// reset some things on the way
 				API.SetServer("")
@@ -498,6 +498,7 @@ App.controller("mainCtrl", [
 		var currentFolderSelecter = null
 		function foldersSelectDefault(val) {
 			$scope.chorus.defaultUploadDestination = val
+			saveState()
 		}
 		function foldersSelectCurrentBatch(val) {
 			$scope.chorus.currentBatch.uploadDestination = val
@@ -524,6 +525,7 @@ App.controller("mainCtrl", [
 				$scope.chorus = {
 					server: $scope.chorus.server,
 				}
+				saveState()
 			})
 		}
 		$scope.settingsChooseDefaultFolder = function() {
