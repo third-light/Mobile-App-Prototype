@@ -1,0 +1,30 @@
+.colors-for-reference {
+	color: rgba(36, 71, 90, 1);
+	color: rgba(72, 169, 166, 1);
+	color: rgba(228, 223, 218, 1);
+	color: rgba(155, 131, 96, 1);
+	color: rgba(193, 102, 107, 1);
+}
+
+body {
+	background-color:rgb(74, 79, 82);
+	font-size:16px;
+	font-family: arial, sans-serif;
+}
+
+
+body #page {
+	position:absolute;
+	top:0;
+	bottom:0;
+	width: 100%;
+}
+body #page #app-container {
+	position:absolute;
+	left:calc(50% - 187.5px);
+	width:375px;
+	top:0;
+	bottom:0;
+	width: 375px;
+	background-color:rgb(74, 79, 82);
+}

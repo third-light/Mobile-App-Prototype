@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="myApp">
+<head>
+	<meta charset="utf-8">
+	<title>Third Light Mobile</title>
+	<script src="js/vendor/angular-1.6.2.min.js"></script>
+	<script src="js/app.js"></script>
+	<script src="js/api.js"></script>
+	<script src="js/loadfile.js"></script>
+	<link rel="stylesheet" href="css/reset.css">
+	<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+	<div id="page" ng-controller="mainCtrl">
+
+		<div id="app-container">
+
+			<div ng-if="appstate=='needlogin'">
+
+				<div ng-if="viewstate=='enter-server'">
+					<img src="img/1.1 Enter Server Address.png">
+					<input type="text" ng-model="chorus.server" style="width:250px;position:absolute;left:100px;top:360px;">
+					<img src="img/1.1 Enter Server Address - Confirm Button.png" ng-click="enterServerConfirm()" style="position:absolute;left:0;top:663px;">
+				</div>
+				<div ng-if="viewstate=='enter-server-error'">
+					<img ng-click="clearEnterServerError()" src="img/1.2 Incorect Server Address Modal.png">
+				</div>
+				<div ng-if="viewstate=='login'">
+					<img src="img/1.3 Login.png">
+					<input type="text" ng-model="chorus.user.username" style="width:250px;position:absolute;left:30px;top:290px;">
+					<input type="password" ng-model="chorus.user.password" style="width:250px;position:absolute;left:30px;top:360px;">
+					<img src="img/1.3 Login - Change Server Button.png" ng-click="loginChangeServer()" style="position:absolute;left:0;top:613px;">
+					<img src="img/1.3 Login - Login Button.png" ng-click="loginLogin()" style="position:absolute;left:0;top:677px;">
+				</div>
+				<div ng-if="viewstate=='incorrect-username-or-password'">
+					<img ng-click="clearIncorrectCredentialsError()" src="img/1.5 Incorrect Username or Password Modal.png">
+				</div>
+
+
+			</div>
+			<div ng-if="appstate=='loggedin'">
+				<div ng-if="viewstate=='upload'">
+					<img src="img/2.1 Add Files.png">
+					<div ng-if="chorus.currentBatch.files.length > 0">
+						<img src="img/2.5 Files - Destination Folder.png" style="position:absolute;left:0;top:76px;">
+						<img src="img/2.5 Files - Destination Folder - Change Button.png" ng-click="filesChooseDestination()" style="position:absolute;right:0;top:96px;">
+						<div style="position:absolute;left:60px;top:134px;color:white">{{chorus.currentBatch.uploadDestination.name}}</div>
+						<div style="overflow:auto;position: absolute;left:0;top:179px;right:0;height:420px;background-color: white;">
+							<div ng-repeat="f in chorus.currentBatch.files" style="position: relative;">
+								<img src="img/2.5 Files - File.png">
+								<div style="position:absolute;left:80px;top:7px;color:#2c2f42">{{f.name}}</div>
+								<div style="position:absolute;left:80px;top:27px;color:#999;font-size:0.8em;">{{f.size | naturalBytes}}</div>
+							</div>
+						</div>
+						<img src="img/2.5 Files - Upload Selected Button.png" ng-click="filesUploadBatch()" style="position:absolute;left:0;top:636px;">
+					</div>
+					<img src="img/2.1 Add Files - Queue Tab Button.png" ng-click="addFilesQueue()" style="position:absolute;left:265px;top:743px;">
+				</div>
+				<div ng-if="viewstate=='queue'">
+					<img src="img/3.1 Queue.png">
+					<div ng-if="chorus.uploadBatches.length > 0">
+						<img src="img/3.1 Queue - Swipe Right.png" style="position:absolute;left:0;top:80px;">
+						<div style="overflow:auto;position: absolute;left:0;top:143px;right:0;height:572px;background-color: white;">
+							<div ng-repeat="b in chorus.uploadBatches" style="position: relative;">
+								<img ng-if="b.status=='Pending'" src="img/3.1 Queue - Pending Row.png">
+								<img ng-if="b.status=='Resizing'" src="img/3.1 Queue - Resizing Row.png">
+								<img ng-if="b.status=='Uploading'" src="img/3.1 Queue - Uploading Row.png">
+								<div style="position:absolute;left:93px;top:15px;color:#2c2f42;font-size:1.1em;">{{b.status}} {{b.progressPercentage}}</div>
+								<div style="position:absolute;width:100px;right:23px;text-align:right;top:22px;color:#999;font-size:0.7em;">{{b.createdDate | date : "d/M/yy HH:mm"}}</div>
+								<div style="position:absolute;left:93px;top:55px;color:#222;font-size:0.85em;">
+									<span ng-if="b.status=='Pending'">{{b.totalFiles}} files pending&nbsp;&nbsp;&nbsp;{{b.totalBytes | naturalBytes}}</span>
+									<span ng-if="b.status=='Resizing'">{{b.progressFiles}}/{{b.totalFiles}} files resized</span>
+									<span ng-if="b.status=='Uploading'">{{b.progressFiles}}/{{b.totalFiles}} files uploaded&nbsp;&nbsp;&nbsp;{{b.progressBytes | naturalBytes}} of {{b.totalBytes | naturalBytes}}</span>
+								</div>
+								<div style="position:absolute;left:92px;top:38px;right:22px;height:7px;overflow:hidden;border-radius:4px;">
+									<div style="position:absolute;left:0;top:0px;height:7px;background-color:#e42528;width:{{b.progressPercentage}};"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<img src="img/3.1 Queue - Upload Tab Button.png" ng-click="queueUpload()" style="position:absolute;left:37px;top:748px;">
+				</div>
+				<img src="img/2.1 Add Files - Settings Button.png" ng-click="loggedInSettings()" style="position:absolute;right:0;top:34px;">
+				<img src="img/2.1 Add Files - Plus Button.png" ng-click="loggedInPlus()" style="position:absolute;left:154px;top:718px;">
+				<div ng-if="uploadstate=='choose'">
+					<div style="position: absolute;left:0;top:0;right:0;height:812px;background-color: black;opacity:0.5;"></div>
+					<img src="img/2.2 Add Files Modal - Use Last Photo Button.png" ng-click="chooseUploadLastPhoto()" style="position:absolute;left:10px;top:554px;">
+					<img src="img/2.2 Add Files Modal - Take Photo Button.png" ng-click="chooseUploadTakePhoto()" style="position:absolute;left:10px;top:609px;">
+					<img src="img/2.2 Add Files Modal - Select File Button.png" ng-click="chooseUploadSelectFile()" style="position:absolute;left:10px;top:664px;">
+					<img src="img/2.2 Add Files Modal - Cancel Button.png" ng-click="chooseUploadCancel()" style="position:absolute;left:10px;top:734px;">
+				</div>
+			</div>
+
+			<div ng-if="appstate=='selectfolder'">
+				<img src="img/2.6 Folders.png">
+				<img src="img/2.6 Folders - Back.png" ng-if="foldersCurrent.parent" ng-click="foldersNavigateBack()" style="position:absolute;left:0;top:0px;">
+				<img src="img/2.6 Folders - Close Button.png" ng-click="foldersClose()" style="position:absolute;right:0;top:39px;">
+				<div style="overflow:auto;position: absolute;left:0;top:99px;right:0;height:520px;background-color: white;">
+					<div ng-repeat="f in folders" style="position: relative;">
+						<img ng-if="f.type=='contextfolder'" ng-src="{{f.avatarUrl}}" style="position:relative; left: 25px;width:32px;height:32px;">
+						<img ng-if="f.type=='folder'" src="img/2.6 Folders - Folder Icon.png" style="position:relative; left: 25px;">
+						<img src="img/2.6 Folders - Divider.png">
+						<div style="position:absolute;left:65px;top:9px;color:#2c2f42">{{f.name}}</div>
+						<div ng-click="foldersNavigateInto(f)" style="position:absolute;left:0;width:100%;height:60px;top:-10px;"></div>
+					</div>
+					<div ng-if="folders.length == 0" style="position: absolute;width:100%;top:10px;color:#999;text-align:center;">This folder has no sub folders.</div>
+				</div>
+				<img src="img/2.6 Folders - Select Folder Button.png" ng-click="foldersSelect()" style="position:absolute;left:0;top:669px;">
+			</div>
+
+			<div ng-if="appstate=='settings'">
+				<img src="img/4.1 Settings.png">
+				<img src="img/4.1 Settings - Back.png" ng-click="settingsBack()" style="position:absolute;left:0;top:0px;">
+				<img src="img/4.1 Settings - User Details.png" style="position:absolute;left:0;top:90px;">
+				<img src="img/4.1 Settings - Default Folder Button.png" ng-click="settingsChooseDefaultFolder()" style="position:absolute;left:0;top:770px;">
+				<img src="img/4.1 Settings - Logout Button.png" ng-click="settingsLogout()" style="position:absolute;left:0;top:1110px;">
+
+				<img ng-src="{{chorus.user.avatarUrl}}" style="position:absolute;left:141.5px;top:105px;width:92px;height:92px;border:2px solid white;border-radius:46px;">
+				<p style="line-height:30px;font-size:1.6em;position:absolute;left:0;top:210px;height:30px;text-align:center;width:100%;color:white;">{{chorus.user.fullName}}</p>
+				<p style="line-height:30px;font-size:0.9em;position:absolute;left:0;top:250px;height:30px;text-align:center;width:100%;color:white;">{{chorus.user.email}}</p>
+				<p style="line-height:30px;font-size:0.7em;position:absolute;left:0;top:280px;height:30px;text-align:center;width:100%;color:white;">{{chorus.server}}</p>
+
+				<p style="line-height:30px;font-size:0.9em;position:absolute;left:239px;top:782px;height:30px;width:93px;color:white;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;pointer-events:none;">{{chorus.defaultUploadDestination.name}}</p>
+		</div>
+		</div>
+
+
+
+	</div>
+
+
+</body>
+</html>
