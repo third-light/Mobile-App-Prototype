@@ -75,15 +75,6 @@ App.controller("mainCtrl", [
 				$scope.chorus.defaultUploadDestination = preservedData.defaultUploadDestination
 			}
 
-			// hacks
-			if (!$scope.chorus.server) {
-				$scope.chorus.server = "chorus.bmh.dev.thirdlight.int"
-			}
-			if (!$scope.chorus.user.username) {
-				$scope.chorus.user.username = "admin"
-				$scope.chorus.user.password = "password!!!"
-			}
-
 			initApp()
 		}
 		function initApp() {
@@ -405,7 +396,7 @@ App.controller("mainCtrl", [
 		}
 
 		function sortOutFolderChooser(folderGuid) {
-			$scope.folders = [];
+			$scope.folders = "loading";
 			$scope.foldersCurrent = {};
 			var spacesD = $q.defer()
 			var foldersD = $q.defer()
@@ -418,10 +409,14 @@ App.controller("mainCtrl", [
 			var itemType, itemContext;
 
 			API.FoldersGetFolderDetails(folderGuid).then(function(folderDetails) {
-				itemContext = folderDetails[folderGuid].context
-				itemType = folderDetails[folderGuid].folderType
+				var det = folderDetails[folderGuid]
+				itemContext = det.context
+				itemType = det.folderType
 				$scope.foldersCurrent.guid = folderGuid
-				$scope.foldersCurrent.name = folderDetails[folderGuid].name
+				$scope.foldersCurrent.name = det.name
+				$scope.foldersCurrent.canUpload = det.childRights.upload && (itemType == "folder" || itemType == "contextfolder" || itemType == "link")
+				
+				console.log(det)
 
 				if (itemType == "contextfolder") {
 					if (itemContext == $scope.chorus.user.context) {
@@ -436,7 +431,7 @@ App.controller("mainCtrl", [
 						}))
 					}
 				} else {
-					parentD.resolve(folderDetails[folderGuid].parentGuid)
+					parentD.resolve(det.parentGuid)
 				}
 			}).then(function() {
 
@@ -444,14 +439,15 @@ App.controller("mainCtrl", [
 					spacesD.resolve(API.ContextsGetChildren(itemContext).then(function(childContexts) {
 						if (childContexts.length > 0) {
 							return API.ContextsGetDetails(childContexts).then(function(contextDetails) {
+								console.log(contextDetails)
 								return childContexts.map(function(contextId) {
 									return {
 										name: contextDetails[contextId].name,
 										type: "contextfolder",
-										context: contextId,
 										guid: contextDetails[contextId].backingFolderGuid,
-										avatarUrl: contextDetails[contextId].avatar,
 										parentGuid: folderGuid,
+										context: contextId,
+										avatarUrl: contextDetails[contextId].avatar,
 									}
 								})
 							})
@@ -472,6 +468,7 @@ App.controller("mainCtrl", [
 					})
 					if (childFolderGuids.length > 0) {
 						return API.FoldersGetFolderDetails(childFolderGuids).then(function(folderDetails) {
+							console.log(folderDetails)
 							return childFolderGuids.map(function(thisFolderGuid) {
 								return {
 									name: folderDetails[thisFolderGuid].name,

@@ -77,7 +77,6 @@ App.service("api", [
 					options: {
 						includeChildCount: true,
 						includeChildRights: true,
-						includeRights: true,
 						thumbsize: "480x320"
 					},
 					folderIds: guids
