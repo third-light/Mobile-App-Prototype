@@ -15,6 +15,8 @@ App.controller("mainCtrl", [
 		function saveState() {
 			var preservedData = {
 				server: $scope.chorus.server,
+				siteName: $scope.chorus.siteName,
+				newSpaceLayout: $scope.chorus.newSpaceLayout,
 				userGuid: $scope.chorus.user && $scope.chorus.user.guid,
 				sessionId: $scope.chorus.sessionId,
 				apiKey: $scope.chorus.apiKey,
@@ -35,15 +37,18 @@ App.controller("mainCtrl", [
 		function bootstrap() {
 			$scope.chorus = {
 				server: "",
+				siteName: "",
+				newSpaceLayout: false,
 				ssoEnabled: null,
 				user: {
+					guid: "",
 					username: "",
 					password: "",
 					email: "",
 					fullName: "",
 					avatarUrl: "",
 					context: "",
-					guid: ""
+					backingFolderGuid: ""
 				},
 				sessionId: "",
 				apiKey: "",
@@ -69,6 +74,8 @@ App.controller("mainCtrl", [
 			var preservedData = loadState()
 			if (preservedData) {
 				$scope.chorus.server = preservedData.server
+				$scope.chorus.siteName = preservedData.siteName
+				$scope.chorus.newSpaceLayout = preservedData.newSpaceLayout
 				$scope.chorus.user.guid = preservedData.userGuid
 				$scope.chorus.sessionId = preservedData.sessionId
 				$scope.chorus.apiKey = preservedData.apiKey
@@ -118,6 +125,7 @@ App.controller("mainCtrl", [
 				$scope.chorus.user.email = userDetails.email
 				$scope.chorus.user.avatarUrl = userDetails.avatar
 				$scope.chorus.user.context = userDetails.context
+				$scope.chorus.user.backingFolderGuid = userDetails.backingFolderGuid
 
 				if (!$scope.chorus.defaultUploadDestination || !$scope.chorus.defaultUploadDestination.guid) {
 					$scope.chorus.defaultUploadDestination = {
@@ -132,6 +140,8 @@ App.controller("mainCtrl", [
 				// and say we're logged in
 				$scope.appstate = "loggedin"
 				$scope.viewstate = "upload"
+
+				console.log(angular.copy($scope.chorus))
 
 			}).catch(function(err) {
 				console.log(err)
@@ -162,7 +172,9 @@ App.controller("mainCtrl", [
 			}
 			API.SetServer(fullServerUrl($scope.chorus.server))
 			API.CoreGetEnvironment().then(function(data) {
+				$scope.chorus.siteName = data.title
 				$scope.chorus.ssoEnabled = data.authModes && Array.isArray(data.authModes) && (data.authModes.indexOf("saml") != -1)
+				$scope.chorus.newSpaceLayout = data.modules && data.modules.newspacelayout
 
 				if ($scope.chorus.ssoEnabled) {
 					$scope.viewstate = "active-directory"
@@ -271,7 +283,7 @@ App.controller("mainCtrl", [
 				view: $scope.viewstate
 			})
 			currentFolderSelecter = foldersSelectCurrentBatch
-			sortOutFolderChooser($scope.chorus.currentBatch.uploadDestination.guid)
+			resetFoldeChooserWithNewLocation($scope.chorus.currentBatch.uploadDestination.guid)
 			$scope.appstate = "selectfolder"
 			$scope.viewstate = "selectfolder"
 		}
@@ -395,102 +407,182 @@ App.controller("mainCtrl", [
 
 		}
 
-		function sortOutFolderChooser(folderGuid) {
-			$scope.folders = "loading";
-			$scope.foldersCurrent = {};
-			var spacesD = $q.defer()
-			var foldersD = $q.defer()
-			var parentD = $q.defer()
-			$q.all([spacesD.promise, foldersD.promise, parentD.promise]).then(function(results) {
-				$scope.folders = results[0].concat(results[1]);
-				$scope.foldersCurrent.parent = results[2];
-			})
+		function resetFoldeChooserWithNewLocation(location) {
+			console.log("resetFoldeChooserWithNewLocation", location)
 
-			var itemType, itemContext;
-
-			API.FoldersGetFolderDetails(folderGuid).then(function(folderDetails) {
-				var det = folderDetails[folderGuid]
-				itemContext = det.context
-				itemType = det.folderType
-				$scope.foldersCurrent.guid = folderGuid
-				$scope.foldersCurrent.name = det.name
-				$scope.foldersCurrent.canUpload = det.childRights.upload && (itemType == "folder" || itemType == "contextfolder" || itemType == "link")
-				
-				console.log(det)
-
-				if (itemType == "contextfolder") {
-					if (itemContext == $scope.chorus.user.context) {
-						parentD.resolve(null)
-					} else {
-						parentD.resolve(API.ContextsGetDetails(itemContext).then(function(contextDetails) {
-							var contextParent = contextDetails[itemContext].parentId
-							if (!contextParent) contextParent = $scope.chorus.user.context;
-							return API.ContextsGetDetails(contextParent).then(function(contextDetails) {
-								return contextDetails[contextParent].backingFolderGuid
-							})
-						}))
-					}
-				} else {
-					parentD.resolve(det.parentGuid)
-				}
-			}).then(function() {
-
-				if (itemType == "contextfolder") {
-					spacesD.resolve(API.ContextsGetChildren(itemContext).then(function(childContexts) {
-						if (childContexts.length > 0) {
-							return API.ContextsGetDetails(childContexts).then(function(contextDetails) {
-								console.log(contextDetails)
-								return childContexts.map(function(contextId) {
-									return {
-										name: contextDetails[contextId].name,
-										type: "contextfolder",
-										guid: contextDetails[contextId].backingFolderGuid,
-										parentGuid: folderGuid,
-										context: contextId,
-										avatarUrl: contextDetails[contextId].avatar,
-									}
-								})
-							})
-						}
-
-						return [];
-					}))
-
-				} else {
-					spacesD.resolve([])
-				}
-
-				foldersD.resolve(API.FoldersGetSortedChildren(folderGuid).then(function(childItems) {
-					var childFolderGuids = childItems.filter(function(item) {
-						return item.type == "folder"
-					}).map(function(childFolder) {
-						return childFolder.guid
-					})
-					if (childFolderGuids.length > 0) {
-						return API.FoldersGetFolderDetails(childFolderGuids).then(function(folderDetails) {
-							console.log(folderDetails)
-							return childFolderGuids.map(function(thisFolderGuid) {
+			function childContextsForContext(ctx) {
+				return API.ContextsGetChildren(ctx).then(function(childContexts) {
+					if (childContexts.length > 0) {
+						return API.ContextsGetDetails(childContexts).then(function(contextDetails) {
+							return childContexts.map(function(contextId) {
 								return {
-									name: folderDetails[thisFolderGuid].name,
-									type: "folder",
-									guid: thisFolderGuid,
-									parentGuid: folderGuid,
+									name: contextDetails[contextId].name,
+									type: "contextfolder",
+									id: contextDetails[contextId].backingFolderGuid,
+									guid: contextDetails[contextId].backingFolderGuid,
+									avatarUrl: contextDetails[contextId].avatar,
 								}
 							})
 						})
 					}
 
 					return [];
-				}))
+				})
+			}
 
+			function childFoldersForGuid(guid) {
+				return API.FoldersGetSortedChildren(guid).then(function(childItems) {
+					var childFolderGuids = childItems.filter(function(item) {
+						return item.type == "folder" // we don't want files
+					}).map(function(childFolder) {
+						return childFolder.guid
+					})
+					if (childFolderGuids.length > 0) {
+						return API.FoldersGetFolderDetails(childFolderGuids).then(function(folderDetails) {
+							return childFolderGuids.map(function(thisFolderGuid) {
+								return {
+									name: folderDetails[thisFolderGuid].name,
+									type: "folder",
+									id: thisFolderGuid,
+									guid: thisFolderGuid,
+								}
+							})
+						})
+					}
+
+					return [];
+				})
+			}
+
+			// location will either be "root", "dom0", or a folder guid
+			$scope.folders = "loading";
+			$scope.foldersCurrent = {};
+
+			if (location == "root") {
+				// "root" shows the site "space" and the user's private "space"
+				$scope.folders = []
+				if ($scope.chorus.newSpaceLayout) {
+					// Site space
+					// Only actually shown if the site has "newspacelayout" enabled
+					$scope.folders.push({
+						name: $scope.chorus.siteName,
+						type: "contextfolder",
+						id: "dom0",
+						avatarUrl: "img/2.6 Folders - world.svg",
+					})
+				}
+				// User's private space
+				$scope.folders.push({
+					name: $scope.chorus.user.fullName,
+					type: "contextfolder",
+					id: $scope.chorus.user.backingFolderGuid,
+					avatarUrl: $scope.chorus.user.avatarUrl,
+				})
+				$scope.foldersCurrent = {
+					name: $scope.chorus.siteName,
+					canUpload: false
+				}
+				return
+			}
+
+
+			if (location == "dom0") {
+				// "dom0" is the identifier for "site space"
+				// It doesn't have a backing folder - i.e. no normal folders can exist here.
+				// Hence we only get child contexts.
+				childContextsForContext("dom0").then(function(children) {
+					$scope.folders = angular.copy(children)
+				})
+
+				$scope.foldersCurrent = {
+					name: $scope.chorus.siteName,
+					canUpload: false,
+					parentId: "root"
+				}
+
+				return
+			}
+
+			// So location must be a guid; a guid for a folder.
+			// It might be a normal folder or a backing folder for a space (a "contextfolder")
+
+			// First get the details and establish $scope.foldersCurrent
+			// The complicated bit is determing the parent identifier when location is a contextfolder.
+			// We're looking for a parent folder guid (or "dom0" if appropriate)
+			API.FoldersGetFolderDetails(location).then(function(locationDetails) {
+				var det = locationDetails[location]
+				var currentDetails = {
+					type: det.folderType,
+					context: det.context,
+					guid: det.guid,
+					name: det.name,
+					canUpload: det.childRights.upload && 
+						(det.folderType == "folder" || det.folderType == "contextfolder" || det.folderType == "link")
+				}
+				
+				// if a non context, then simply the parent guid
+				if (currentDetails.type != "contextfolder") {
+					currentDetails.parentId = det.parentGuid
+					return currentDetails
+				}
+
+				// must be a context, so find the parent context
+				// One special case first for "me" which currently doesn't return the correct context parent
+				// "me" is the context identifier for the user's private space
+				if (currentDetails.context == "me") {
+					currentDetails.parentId = "root"
+					return currentDetails
+				}
+
+				return API.ContextsGetDetails(currentDetails.context).then(function(contextDetails) {
+					var contextParent = contextDetails[currentDetails.context].parentId
+					if (!contextParent) {
+						contextParent = "me" // if no parent we map to "me" to avoid breaking old sites.
+					}
+					// Special case for "dom0"
+					// "dom0" doesn't have a backing folder
+					if (contextParent == "dom0") {
+						return "dom0"
+					}
+					// All other contexts will have a backing folder so find it now
+					return API.ContextsGetDetails(contextParent).then(function(contextParentDetails) {
+						return contextParentDetails[contextParent].backingFolderGuid
+					})
+				}).then(function(parent) {
+					currentDetails.parentId = parent
+					return currentDetails
+				})
+
+			}).then(function(currentDetails) {
+				// set the current details into scope
+				$scope.foldersCurrent = currentDetails
+
+				// set up some deferred objects
+				var childSpacesD = $q.defer()
+				var childFoldersD = $q.defer()
+				
+				// Get a list of child contexts if appropriate
+				if ($scope.foldersCurrent.type == "contextfolder") {
+					childSpacesD.resolve(childContextsForContext($scope.foldersCurrent.context))
+				} else {
+					childSpacesD.resolve([])
+				}
+
+				// Get a lost of child folders
+				childFoldersD.resolve(childFoldersForGuid($scope.foldersCurrent.guid))
+
+				// Wait for the promises to resolve and set the children into $scope.folders
+				$q.all([childSpacesD.promise, childFoldersD.promise]).then(function(results) {
+					$scope.folders = results[0].concat(results[1]);
+				})
 			})
 		}
 
 		$scope.foldersNavigateInto = function(folderDetails) {
-			sortOutFolderChooser(folderDetails.guid)
+			resetFoldeChooserWithNewLocation(folderDetails.id)
 		}
 		$scope.foldersNavigateBack = function() {
-			sortOutFolderChooser($scope.foldersCurrent.parent)
+			resetFoldeChooserWithNewLocation($scope.foldersCurrent.parentId)
 		}
 		var currentFolderSelecter = null
 		function foldersSelectDefault(val) {
@@ -523,6 +615,7 @@ App.controller("mainCtrl", [
 					server: $scope.chorus.server,
 				}
 				saveState()
+				bootstrap()
 			})
 		}
 		$scope.settingsChooseDefaultFolder = function() {
@@ -531,7 +624,7 @@ App.controller("mainCtrl", [
 				view: $scope.viewstate
 			})
 			currentFolderSelecter = foldersSelectDefault
-			sortOutFolderChooser($scope.chorus.defaultUploadDestination.guid)
+			resetFoldeChooserWithNewLocation($scope.chorus.defaultUploadDestination.guid)
 			$scope.appstate = "selectfolder"
 			$scope.viewstate = "selectfolder"
 		}

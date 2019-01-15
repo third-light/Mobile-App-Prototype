@@ -14,8 +14,11 @@ App.service("api", [
 				inParams:args,
 				sessionId:sessionId
 			}
-
-			console.log("API call: ", method)
+			var params = ""
+			if (args) {
+				params = JSON.stringify(args)
+			}
+			var request = method+"("+params+")";
 
 			return $http.post(server+"/api.json.tlx", inPacket).then(function(resp) {
 				if (resp.status != 200) {
@@ -33,6 +36,12 @@ App.service("api", [
 			},function(err) {
 				console.error(err)
 				return $q.reject("some transport error")
+			}).then(function(response) {
+				console.log(request, response)
+				return response
+			}, function(err) {
+				console.log(request, err)
+				return $q.reject(err)
 			})
 		}
 
