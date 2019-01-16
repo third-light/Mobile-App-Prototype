@@ -283,7 +283,7 @@ App.controller("mainCtrl", [
 				view: $scope.viewstate
 			})
 			currentFolderSelecter = foldersSelectCurrentBatch
-			resetFoldeChooserWithNewLocation($scope.chorus.currentBatch.uploadDestination.guid)
+			resetFolderChooserWithNewLocation($scope.chorus.currentBatch.uploadDestination.guid)
 			$scope.appstate = "selectfolder"
 			$scope.viewstate = "selectfolder"
 		}
@@ -407,8 +407,8 @@ App.controller("mainCtrl", [
 
 		}
 
-		function resetFoldeChooserWithNewLocation(location) {
-			console.log("resetFoldeChooserWithNewLocation", location)
+		function resetFolderChooserWithNewLocation(location) {
+			console.log("resetFolderChooserWithNewLocation", location)
 
 			function childContextsForContext(ctx) {
 				return API.ContextsGetChildren(ctx).then(function(childContexts) {
@@ -579,10 +579,10 @@ App.controller("mainCtrl", [
 		}
 
 		$scope.foldersNavigateInto = function(folderDetails) {
-			resetFoldeChooserWithNewLocation(folderDetails.id)
+			resetFolderChooserWithNewLocation(folderDetails.id)
 		}
 		$scope.foldersNavigateBack = function() {
-			resetFoldeChooserWithNewLocation($scope.foldersCurrent.parentId)
+			resetFolderChooserWithNewLocation($scope.foldersCurrent.parentId)
 		}
 		var currentFolderSelecter = null
 		function foldersSelectDefault(val) {
@@ -624,7 +624,7 @@ App.controller("mainCtrl", [
 				view: $scope.viewstate
 			})
 			currentFolderSelecter = foldersSelectDefault
-			resetFoldeChooserWithNewLocation($scope.chorus.defaultUploadDestination.guid)
+			resetFolderChooserWithNewLocation($scope.chorus.defaultUploadDestination.guid)
 			$scope.appstate = "selectfolder"
 			$scope.viewstate = "selectfolder"
 		}
