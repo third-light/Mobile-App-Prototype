@@ -83,11 +83,6 @@ App.service("api", [
 					guids = [guids]
 				}
 				return doapi("Folders.GetFolderDetails", {
-					options: {
-						includeChildCount: true,
-						includeChildRights: true,
-						thumbsize: "480x320"
-					},
 					folderIds: guids
 				})
 			},

@@ -16,7 +16,6 @@ App.controller("mainCtrl", [
 			var preservedData = {
 				server: $scope.chorus.server,
 				siteName: $scope.chorus.siteName,
-				newSpaceLayout: $scope.chorus.newSpaceLayout,
 				userGuid: $scope.chorus.user && $scope.chorus.user.guid,
 				sessionId: $scope.chorus.sessionId,
 				apiKey: $scope.chorus.apiKey,
@@ -38,7 +37,6 @@ App.controller("mainCtrl", [
 			$scope.chorus = {
 				server: "",
 				siteName: "",
-				newSpaceLayout: false,
 				ssoEnabled: null,
 				user: {
 					guid: "",
@@ -75,7 +73,6 @@ App.controller("mainCtrl", [
 			if (preservedData) {
 				$scope.chorus.server = preservedData.server
 				$scope.chorus.siteName = preservedData.siteName
-				$scope.chorus.newSpaceLayout = preservedData.newSpaceLayout
 				$scope.chorus.user.guid = preservedData.userGuid
 				$scope.chorus.sessionId = preservedData.sessionId
 				$scope.chorus.apiKey = preservedData.apiKey
@@ -174,7 +171,6 @@ App.controller("mainCtrl", [
 			API.CoreGetEnvironment().then(function(data) {
 				$scope.chorus.siteName = data.title
 				$scope.chorus.ssoEnabled = data.authModes && Array.isArray(data.authModes) && (data.authModes.indexOf("saml") != -1)
-				$scope.chorus.newSpaceLayout = data.modules && data.modules.newspacelayout
 
 				if ($scope.chorus.ssoEnabled) {
 					$scope.viewstate = "active-directory"
@@ -460,26 +456,21 @@ App.controller("mainCtrl", [
 
 			if (location == "root") {
 				// "root" shows the site "space" and the user's private "space"
-				$scope.folders = []
-				if ($scope.chorus.newSpaceLayout) {
-					// Site space
-					// Only actually shown if the site has "newspacelayout" enabled
-					$scope.folders.push({
-						name: $scope.chorus.siteName,
-						type: "contextfolder",
-						id: "dom0",
-						avatarUrl: "img/2.6 Folders - world.svg",
-					})
-				}
-				// User's private space
-				$scope.folders.push({
+				$scope.folders = [{
+					name: "Site",
+					type: "contextfolder",
+					id: "dom0",
+					avatarUrl: "img/2.6 Folders - world.svg",
+					isCircularAvatar: true
+				},{
 					name: $scope.chorus.user.fullName,
 					type: "contextfolder",
 					id: $scope.chorus.user.backingFolderGuid,
 					avatarUrl: $scope.chorus.user.avatarUrl,
-				})
+					isCircularAvatar: true
+				}]
 				$scope.foldersCurrent = {
-					name: $scope.chorus.siteName,
+					name: "Choose Destination",
 					canUpload: false
 				}
 				return
@@ -495,7 +486,7 @@ App.controller("mainCtrl", [
 				})
 
 				$scope.foldersCurrent = {
-					name: $scope.chorus.siteName,
+					name: "Site",
 					canUpload: false,
 					parentId: "root"
 				}
@@ -516,7 +507,7 @@ App.controller("mainCtrl", [
 					context: det.context,
 					guid: det.guid,
 					name: det.name,
-					canUpload: det.childRights.upload && 
+					canUpload: det.createUnder && 
 						(det.folderType == "folder" || det.folderType == "contextfolder" || det.folderType == "link")
 				}
 				

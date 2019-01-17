@@ -100,7 +100,8 @@
 				<div style="overflow:auto;position: absolute;left:0;top:95px;right:0;height:544px;background-color: white;">
 					<div ng-if="folders == 'loading'" style="position: absolute;width:100%;top:10px;color:#999;text-align:center;">Loading content...</div>
 					<div ng-if="folders != 'loading'" ng-repeat="f in folders" style="padding-top:4px;position: relative;">
-						<img ng-if="f.type=='contextfolder'" ng-src="{{f.avatarUrl}}" style="position:relative; left: 25px;width:32px;height:32px;border:2px solid white;border-radius:4px;box-shadow:0 0 5px grey">
+						<img ng-if="f.type=='contextfolder' && f.isCircularAvatar" ng-src="{{f.avatarUrl}}" style="position:relative; left: 25px;width:32px;height:32px;border:2px solid white;border-radius:16px;box-shadow:0 0 5px grey">
+						<img ng-if="f.type=='contextfolder' && !f.isCircularAvatar" ng-src="{{f.avatarUrl}}" style="position:relative; left: 25px;width:32px;height:32px;border:2px solid white;border-radius:4px;box-shadow:0 0 5px grey">
 						<img ng-if="f.type=='folder'" src="img/2.6 Folders - Folder Icon.png" style="position:relative; left: 25px;">
 						<img src="img/2.6 Folders - Divider.png">
 						<div style="position:absolute;left:65px;top:9px;height:25px;line-height:25px;color:#2c2f42;overflow:hidden;text-overflow: ellipsis;right:15px;white-space: nowrap;">{{f.name}}</div>
