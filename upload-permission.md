@@ -23,8 +23,8 @@ Folders.GetFolderDetails({
 
 ```
 USER_CAN_UPLOAD = DETAILS.createUnder && (DETAILS.folderType == "folder" ||
-										   DETAILS.folderType == "contextfolder" ||
-										   DETAILS.folderType == "link")
+                                          DETAILS.folderType == "contextfolder" ||
+                                          DETAILS.folderType == "link")
 					 
 ```
 
