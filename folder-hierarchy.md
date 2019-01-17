@@ -78,15 +78,14 @@ There are only 2 special context ids of interest: `root` and `dom0`.
 If you are displaying the contents of `root` you will be displaying the highest level items in the hierarchy. These should be a hardwired list of two contexts: the `dom0` context and the user's home context. The `dom0` context contains site wide assets, and the user's home context contains the user's private data. You should display these as follows:
 
 - `dom0`
- - name: "Site"
- - avatar: Globe icon (SVG graphic will be provided)
- - id: `dom0` (i.e. navigating into here should result in the interface displaying the contents of the special `dom0` context as below)
+  - name: "Site"
+  - avatar: Globe icon (SVG graphic will be provided)
+  - id: `dom0` (i.e. navigating into here should result in the interface displaying the contents of the special `dom0` context as below)
 
 - user's home context
- - name: `userDetails.name` from login API call
- - avatar: `userDetails.avatar` from login API call
- - id: `userDetails.backingFolderGuid` from login API call (i.e. navigating into here should  
-result in displaying the contents of this folder guid using the process above)
+  - name: `userDetails.name` from login API call
+  - avatar: `userDetails.avatar` from login API call
+  - id: `userDetails.backingFolderGuid` from login API call (i.e. navigating into here should result in displaying the contents of this folder guid using the process above)
  
 
 #### Displaying `dom0`
