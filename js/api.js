@@ -67,6 +67,11 @@ App.service("api", [
 					password: password,
 				})
 			},
+			CoreLoginWithToken: function(token) {
+				return doapi("Core.LoginWithToken", {
+					token: token
+				})
+			},
 			CoreLoginWithKey: function(apiKey, persistent) {
 				return doapi("Core.LoginWithKey", {
 					apikey: apiKey,

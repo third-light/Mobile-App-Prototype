@@ -83,24 +83,69 @@ App.controller("mainCtrl", [
 		}
 		function initApp() {
 
-			if (!$scope.chorus.server || (!$scope.chorus.sessionId && !$scope.chorus.apiKey)) {
+			// Establish a login token if one has been passed in
+			// First from the URL - if found, strip from URL, store in session storage and reload.
+			// Second pass we will source token from session storage and clear it out
+			var token
+			if (document.location.search != "")
+			{
+				var matches = document.location.search.match(/^\?token=([a-z0-9]+)$/)
+				if (matches && matches.length == 2)
+				{
+					token = matches[1];
+					window.sessionStorage.setItem("login-token", token)
+					document.location.href = document.location.origin
+					return
+				}
+			}
+			if (!token)
+			{
+				token = window.sessionStorage.getItem("login-token")
+				window.sessionStorage.removeItem("login-token")
+			}
+
+			if (!$scope.chorus.server || (!token && !$scope.chorus.sessionId && !$scope.chorus.apiKey)) {
 				$scope.appstate = "needlogin"
 				$scope.viewstate = "enter-server"
 				return
 			}
 
 			API.SetServer(fullServerUrl($scope.chorus.server))
-			API.SetSessionId($scope.chorus.sessionId)
-			API.CoreGetUserDetails().then(function(userDetails) {
-				if (userDetails.guid == $scope.chorus.user.guid) {
+
+			if (token) {
+				earlyUserP = API.CoreLoginWithToken(token).then(function(loginDetails) {
+					return doPostSuccessfulLogin(loginDetails)
+				// }).catch(initApp) // any errors means re-enter initApp whereupon we'll try to init as usual
+				})
+				return
+			}
+			
+
+			var sessionUserP
+			if ($scope.chorus.sessionId) {
+				API.SetSessionId($scope.chorus.sessionId)
+				sessionUserP = API.CoreGetUserDetails().then(function(userDetails) {
+					if (userDetails.guid != $scope.chorus.user.guid) {
+						// users don't match - user deleted or session expired
+						$scope.chorus.sessionId = ""
+						API.SetSessionId("")
+						return null
+					}
+					
+					return userDetails;
+				})
+			} else {
+				sessionUserP = $q.resolve()
+			}
+
+			
+
+			sessionUserP.then(function(userDetails) {
+				if (userDetails) {
 					return userDetails
 				}
 
-
-				// users don't match - user deleted or session expired
 				// if we have an apikey we can try using that to restablish a session
-				$scope.chorus.sessionId = ""
-				API.SetSessionId("")
 				if ($scope.chorus.apiKey) {
 					return API.CoreLoginWithKey($scope.chorus.apiKey, true).then(function(loginDetails) {
 						// successful login so store session
@@ -111,7 +156,7 @@ App.controller("mainCtrl", [
 				}
 
 
-				return $q.reject();
+				return $q.reject("No API Key");
 
 			}).then(function(userDetails) {
 
@@ -154,6 +199,34 @@ App.controller("mainCtrl", [
 		}
 		bootstrap()
 
+		function doPostSuccessfulLogin(loginDetails) {
+			// first set the session id
+			API.SetSessionId(loginDetails.sessionId)
+			// and init the user guid
+			$scope.chorus.user = {
+				guid: loginDetails.userDetails.guid
+			}
+
+			// we've authenticated so we now need to establish an API key
+			// There might already be one on the server
+			return API.ApiKeyGetAllKeys().then(function(keyDetails) {
+				var myKey = keyDetails.filter(function(k) {
+					return k.label == API_KEY_LABEL
+				})
+
+				if (myKey.length >= 1) {
+					return myKey[0];
+				}
+				return API.ApiKeyCreateKey(API_KEY_LABEL)
+			}).then(function(keyDetails) {
+				$scope.chorus.apiKey = keyDetails.apikey
+				// now with our key stored we bounce back to init.
+				// we haven't stored the current session so init will restablish
+				// a session but this time using apikey
+				API.SetSessionId("") // explicitly clear from API service (unnecessary probably)
+				initApp()
+			})
+		}
 
 		function fullServerUrl(suggested) {
 			if (suggested.substr(0,4) != "http") {
@@ -172,8 +245,11 @@ App.controller("mainCtrl", [
 				$scope.chorus.siteName = data.title
 				$scope.chorus.ssoEnabled = data.authModes && Array.isArray(data.authModes) && (data.authModes.indexOf("saml") != -1)
 
+				saveState()
+
 				if ($scope.chorus.ssoEnabled) {
-					$scope.viewstate = "active-directory"
+					// The "custom" saml auth type is only honoured on development systems.
+					document.location.href=fullServerUrl($scope.chorus.server)+"/saml.tlx?type=custom&v=1.0&return="+encodeURIComponent(document.location.href)
 				} else {
 					$scope.viewstate = "login"
 				}
@@ -193,34 +269,7 @@ App.controller("mainCtrl", [
 				$scope.chorus.user.password
 			).then(function(data) {
 
-				// first set the session id
-				API.SetSessionId(data.sessionId)
-				// and init the user guid
-				$scope.chorus.user = {
-					guid: data.userDetails.guid
-				}
-
-				// we've authenticated so we now need to establish an API key
-				// There might already be one on the server
-
-
-				return API.ApiKeyGetAllKeys().then(function(keyDetails) {
-					var myKey = keyDetails.filter(function(k) {
-						return k.label == API_KEY_LABEL
-					})
-
-					if (myKey.length >= 1) {
-						return myKey[0];
-					}
-					return API.ApiKeyCreateKey(API_KEY_LABEL)
-				}).then(function(keyDetails) {
-					$scope.chorus.apiKey = keyDetails.apikey
-					// now with our key stored we bounce back to init.
-					// we haven't stored the current session so init will restablish
-					// a session but this time using apikey
-					API.SetSessionId("") // explicitly clear from API service (unnecessary probably)
-					initApp()
-				})
+				return doPostSuccessfulLogin(data)
 
 			}).catch(function(err) {
 				console.log(err)
