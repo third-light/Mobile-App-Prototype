@@ -18,7 +18,7 @@ If one or both of the `result.api` and `result.action` are not `"OK"` then an er
 
 ## API Error Codes
 
-For the most part all API errors can be treated in the same way you handle a HTTP transport error. This might be through a retry or abandong the current operation, maybe back to the login screen.
+For the most part all API errors can be treated in the same way you handle an HTTP transport error. This might be through a retry or abandong the current operation, maybe back to the login screen.
 
 There is only one that might well crop up in normal use:
 
@@ -31,9 +31,9 @@ In this case the user's site is no longer available and they must be bounced bac
 
 ## ACTION Error Codes
 
-
 There are a handful of error codes that can crop up in normal usage. Some are easy to reproduce, like login failures, whereas others are more subtle, for example race conditions during folder hierarchy browsing. Notes are included below.
 
+The methods detailed below can return action errors other than the ones highlighted, but these should never crop up during production use of the app. You should handle these other errors in the same way you handle HTTP transport errors.
 
 ## Core.GetEnvironment
 
