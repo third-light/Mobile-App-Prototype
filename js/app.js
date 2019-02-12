@@ -11,6 +11,7 @@ App.controller("mainCtrl", [
     function($scope, $q, $timeout, $http, API, LoadFile) {
 
 		var API_KEY_LABEL = "mobileapp-proto"
+		var CLIENT_ID = "79dc8e45-ffa1-4219-87ee-a4eaaea24230"
 
 		function saveState() {
 			var preservedData = {
@@ -242,6 +243,11 @@ App.controller("mainCtrl", [
 			}
 			API.SetServer(fullServerUrl($scope.chorus.server))
 			API.CoreGetEnvironment().then(function(data) {
+				if (!data || !data.supportedClients || !Array.isArray(data.supportedClients) || data.supportedClients.indexOf(CLIENT_ID) == -1) {
+					return $q.reject("CLIENT_NOT_SUPPORTED")
+				}
+				return data
+			}).then(function(data) {
 				$scope.chorus.siteName = data.title
 				$scope.chorus.ssoEnabled = data.authModes && Array.isArray(data.authModes) && (data.authModes.indexOf("saml") != -1)
 
@@ -254,7 +260,11 @@ App.controller("mainCtrl", [
 					$scope.viewstate = "login"
 				}
 			}).catch(function(err) {
-				$scope.viewstate = "enter-server-error"
+				if (err == "CLIENT_NOT_SUPPORTED") {
+					$scope.viewstate = "enter-server-api-nojoy"
+				} else {
+					$scope.viewstate = "enter-server-error"
+				}
 				return
 			})
 

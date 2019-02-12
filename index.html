@@ -26,6 +26,9 @@
 				<div ng-if="viewstate=='enter-server-error'">
 					<img ng-click="clearEnterServerError()" src="img/1.2 Incorect Server Address Modal.png">
 				</div>
+				<div ng-if="viewstate=='enter-server-api-nojoy'">
+					<img ng-click="clearEnterServerError()" src="img/1.2 Client Not Supported.png">
+				</div>
 				<div ng-if="viewstate=='login'">
 					<img src="img/1.3 Login.png">
 					<input type="text" ng-model="chorus.user.username" style="width:250px;position:absolute;left:30px;top:290px;">

@@ -18,7 +18,7 @@ If one or both of the `result.api` and `result.action` are not `"OK"` then an er
 
 ## API Error Codes
 
-For the most part all API errors can be treated in the same way you handle an HTTP transport error. This might be through a retry or abandong the current operation, maybe back to the login screen.
+For the most part all API errors can be treated in the same way you handle an HTTP transport error. This might be through a retry or abandoning the current operation, maybe back to the login screen.
 
 There is only one that might well crop up in normal use:
 
