@@ -2,13 +2,14 @@ App = angular.module('myApp', [])
 
 
 App.controller("mainCtrl", [
+	"$window",
     "$scope",
 	"$q",
 	"$timeout",
 	"$http",
 	"api",
 	"loadFile",
-    function($scope, $q, $timeout, $http, API, LoadFile) {
+    function($window, $scope, $q, $timeout, $http, API, LoadFile) {
 
 		var API_KEY_LABEL = "mobileapp-proto"
 		var CLIENT_ID = "79dc8e45-ffa1-4219-87ee-a4eaaea24230"
@@ -268,6 +269,9 @@ App.controller("mainCtrl", [
 				return
 			})
 
+		}
+		$scope.sendSupportEmail = function() {
+			$window.open('mailto:support@thirdlight.com', "_self")
 		}
 		$scope.clearEnterServerError = function() {
 			$scope.viewstate = "enter-server"
