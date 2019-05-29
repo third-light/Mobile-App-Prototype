@@ -520,20 +520,20 @@ App.controller("mainCtrl", [
 			if (location == "root") {
 				// "root" shows the site "space" and the user's private "space"
 				$scope.folders = [{
-					name: "Site",
+					name: $scope.chorus.siteName,
 					type: "contextfolder",
 					id: "dom0",
 					avatarUrl: "img/2.6 Folders - world.svg",
 					isCircularAvatar: true
 				},{
-					name: $scope.chorus.user.fullName,
+					name: "Private",
 					type: "contextfolder",
 					id: $scope.chorus.user.backingFolderGuid,
 					avatarUrl: $scope.chorus.user.avatarUrl,
 					isCircularAvatar: true
 				}]
 				$scope.foldersCurrent = {
-					name: "Choose Destination",
+					name: "Spaces",
 					canUpload: false
 				}
 				return
